@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MDT Tático - Polícia</title>
+
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ TELA DE LOGIN (gate de acesso) ============ -->
+<div id="loginScreen">
+  <div class="login-card glass">
+    <div class="login-logo">🛡️<br>MDT Tático</div>
+    <div class="login-sub">Terminal de dados — acesso restrito</div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="login_email" placeholder="seu@email.com" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login_senha" placeholder="Senha" autocomplete="current-password">
+    </div>
+    <div class="field-hint" id="login_erro" style="color:var(--danger); min-height:14px;"></div>
+    <button type="button" class="save-btn" id="login_btnEntrar">Entrar</button>
+    <button type="button" class="btn-inline secondary" id="login_btnCriarConta" style="width:100%; margin-top:8px;">Criar conta nova</button>
+    <div class="field-hint" id="login_status" style="text-align:center; margin-top:10px;"></div>
+  </div>
+</div>
+
+<div id="appRoot">
+<div id="map"></div>
+
+<!-- Endereço atual -->
+<div id="addressPanel" class="glass">
+  <div class="gps-dot searching" id="gpsDot"></div>
+  <div class="pin">📍</div>
+  <div class="addr-text">
+    <div class="addr-main" id="addrMain">Obtendo localização GPS...</div>
+    <div class="addr-sub" id="addrSub">Aguardando sinal</div>
+  </div>
+  <div id="syncIndicator" title="Status de sincronização">☁️</div>
+</div>
+
+<!-- Botão ocultar/mostrar interface -->
+<div id="toggleUiBtn" class="glass" title="Ocultar/Mostrar Interface">👁️</div>
+
+<!-- Filtros: ícone recolhido + painel -->
+<div id="filtersToggleBtn" class="glass" title="Filtros de camadas">🎚️</div>
+<div id="filtersPanel" class="glass">
+  <div class="f-title">Camadas do Mapa</div>
+  <label class="f-row"><input type="checkbox" id="filterAbordagens" checked> 🚨 Abordagens <span class="cnt" id="cntAbord">0</span></label>
+  <label class="f-row"><input type="checkbox" id="filterLocais" checked> 🏚️ Locais Ilícitos <span class="cnt" id="cntLocais">0</span></label>
+  <label class="f-row"><input type="checkbox" id="filterProcurados" checked> 🚓 Procurados <span class="cnt" id="cntProcurados">0</span></label>
+</div>
+
+<!-- Recentralizar -->
+<div id="recenterBtn" class="glass" title="Centralizar no GPS">🎯</div>
+
+<!-- Toolbar inferior: Arquivo + FAB de ações -->
+<div id="toolbar">
+  <div class="tool-btn glass" id="btnArquivo"><div class="ic">🗂️</div><div class="lb">Arquivo</div></div>
+  <div class="fab-container" id="fabContainer">
+    <div class="fab-sub glass" id="btnNovoProcurado"><span class="ic">🚓</span><span class="lb">Procurado</span></div>
+    <div class="fab-sub glass" id="btnNovoLocal"><span class="ic">🏚️</span><span class="lb">Local Ilícito</span></div>
+    <div class="fab-sub glass" id="btnNovaAbordagem"><span class="ic">🚨</span><span class="lb">Abordagem</span></div>
+    <div class="fab-main glass" id="fabMain">➕</div>
+  </div>
+</div>
+
+<!-- Alerta de procurado próximo (banner, não bloqueia o mapa) -->
+<div id="procuradoAlertCard">
+  <div class="pa-header">🚓 Procurado nas proximidades</div>
+  <div class="pa-body">
+    <img id="pa_foto" style="display:none">
+    <div class="pa-info">
+      <div class="pa-nome" id="pa_nome"></div>
+      <div class="pa-endereco" id="pa_endereco"></div>
+    </div>
+  </div>
+  <div class="pa-actions">
+    <button type="button" id="pa_btnMandado">📄 Ver Mandado</button>
+    <button type="button" id="pa_btnFechar">Dispensar</button>
+  </div>
+</div>
+
+<!-- Seletor de localização exata no mapa (pin-drop) -->
+<div id="locPicker" class="loc-picker">
+  <div class="loc-picker-crosshair">📍</div>
+  <div class="loc-picker-bar glass">
+    <div class="loc-picker-hint">Arraste o mapa até o local exato — o marcador fica fixo no centro</div>
+    <div class="loc-picker-actions">
+      <button type="button" class="btn-inline secondary" id="locPickerCancel">Cancelar</button>
+      <button type="button" class="btn-inline" id="locPickerConfirm">✅ Confirmar Localização</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: ABORDAGEM ============ -->
+<div class="overlay" id="overlayAbordagem">
+  <div class="sheet">
+    <div class="sheet-header">
+      <h2>🚨 <span id="tituloAbordagem">Nova Abordagem</span></h2>
+      <div class="close-x" data-close="overlayAbordagem">✕</div>
+    </div>
+    <form id="formAbordagem">
+      <input type="hidden" id="ab_id">
+
+      <div class="field">
+        <label>RG / CPF</label>
+        <div class="loc-row">
+          <input type="text" id="ab_doc" placeholder="00.000.000-0 ou 000.000.000-00" autocomplete="off">
+          <button type="button" class="btn-inline" id="ab_btnVerificar">🔍 Verificar</button>
+        </div>
+        <div class="autofill-flag" id="ab_autofill_flag">✅ Registro anterior encontrado — dados preenchidos</div>
+      </div>
+      <label class="check-row"><input type="checkbox" id="ab_semDoc"> Pessoa sem documento</label>
+
+      <div class="field">
+        <label>Nome Completo</label>
+        <input type="text" id="ab_nome" placeholder="Ex: João da Silva">
+      </div>
+      <div class="field">
+        <label>Vulgo (Opcional)</label>
+        <input type="text" id="ab_vulgo" placeholder="Ex: O Sombra">
+      </div>
+      <div class="field">
+        <label>Nome da Mãe</label>
+        <input type="text" id="ab_mae" placeholder="Nome completo da mãe">
+      </div>
+      <div class="field">
+        <label>Data de Nascimento</label>
+        <input type="date" id="ab_nasc">
+      </div>
+      <div class="field">
+        <label>Endereço de Moradia</label>
+        <input type="text" id="ab_moradia" placeholder="Endereço residencial do indivíduo">
+      </div>
+
+      <div class="field">
+        <label>Endereço da Abordagem</label>
+        <div class="loc-row">
+          <input type="text" id="ab_endereco" placeholder="Digite o endereço ou use os botões">
+          <button type="button" class="icon-btn-sm" id="ab_btnBuscarEndereco" title="Buscar endereço digitado">🔍</button>
+          <button type="button" class="icon-btn-sm" id="ab_btnGps" title="Usar GPS atual">📍</button>
+          <button type="button" class="icon-btn-sm" id="ab_btnMapPick" title="Selecionar local exato no mapa">🗺️</button>
+        </div>
+        <div class="field-hint" id="ab_locHint">Nenhuma localização definida ainda.</div>
+        <div class="addr-suggestion" id="ab_addrSuggestion">
+          💡 <span class="ast"></span>
+          <button type="button" class="addr-suggestion-use">Usar este texto</button>
+        </div>
+        <div class="field-hint" style="opacity:.65">O pino no mapa é o que vale oficialmente. Prefira digitar o endereço que você está vendo — a sugestão do mapa pode errar rua/bairro.</div>
+      </div>
+
+      <div class="field">
+        <label>Foto</label>
+        <div class="photo-zone" id="ab_photoZone">
+          <div class="ph-empty" id="ab_photoEmpty"><span class="ic">📷</span>Toque para tirar/anexar foto</div>
+          <img id="ab_photoPreview" style="display:none">
+          <input type="file" accept="image/*" capture="environment" id="ab_photoInput">
+        </div>
+        <button type="button" class="remove-photo" id="ab_removePhoto" style="display:none">Remover foto</button>
+        <div class="field-hint">A foto também ajuda a identificar registros já existentes.</div>
+      </div>
+
+      <div class="field">
+        <label>Artigos Infringidos (Opcional)</label>
+        <div class="chip-row" id="ab_chipRow">
+          <div class="chip" data-artigo="Art. 155">Art. 155 — Furto</div>
+          <div class="chip" data-artigo="Art. 157">Art. 157 — Roubo</div>
+          <div class="chip" data-artigo="Art. 171">Art. 171 — Estelionato</div>
+          <div class="chip" data-artigo="Art. 33 Lei 11.343">Art. 33 — Tráfico</div>
+          <div class="chip" data-artigo="Art. 28 Lei 11.343">Art. 28 — Posse p/ Consumo</div>
+          <div class="chip" data-artigo="Art. 129">Art. 129 — Lesão Corporal</div>
+          <div class="chip" data-artigo="Art. 147">Art. 147 — Ameaça</div>
+          <div class="chip" data-artigo="Art. 121">Art. 121 — Homicídio</div>
+        </div>
+        <div class="artigo-search-wrap">
+          <input type="text" id="ab_artigoSearch" placeholder="🔍 Buscar outro artigo (ex: receptação, 306, arma)..." autocomplete="off">
+          <div class="artigo-search-results" id="ab_artigoResults"></div>
+        </div>
+        <input type="hidden" id="ab_artigos">
+      </div>
+
+      <div class="field">
+        <label>Observações Adicionais</label>
+        <textarea id="ab_obs" placeholder="Detalhes sobre o indivíduo, comportamento, veículos, etc."></textarea>
+      </div>
+
+      <button type="submit" class="save-btn">💾 Salvar Registro</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: PROCURADO ============ -->
+<div class="overlay" id="overlayProcurado">
+  <div class="sheet">
+    <div class="sheet-header">
+      <h2>🚓 <span id="tituloProcurado">Novo Procurado</span></h2>
+      <div class="close-x" data-close="overlayProcurado">✕</div>
+    </div>
+    <form id="formProcurado">
+      <input type="hidden" id="pr_id">
+
+      <div class="field">
+        <label>RG / CPF</label>
+        <div class="loc-row">
+          <input type="text" id="pr_doc" placeholder="00.000.000-0 ou 000.000.000-00" autocomplete="off">
+          <button type="button" class="btn-inline" id="pr_btnVerificar">🔍 Verificar</button>
+        </div>
+        <div class="autofill-flag" id="pr_autofill_flag">✅ Registro anterior encontrado — dados preenchidos</div>
+      </div>
+      <label class="check-row"><input type="checkbox" id="pr_semDoc"> Pessoa sem documento</label>
+
+      <div class="field">
+        <label>Nome Completo</label>
+        <input type="text" id="pr_nome" placeholder="Ex: João da Silva">
+      </div>
+      <div class="field">
+        <label>Vulgo (Opcional)</label>
+        <input type="text" id="pr_vulgo" placeholder="Ex: O Sombra">
+      </div>
+      <div class="field">
+        <label>Nome da Mãe</label>
+        <input type="text" id="pr_mae" placeholder="Nome completo da mãe">
+      </div>
+      <div class="field">
+        <label>Data de Nascimento</label>
+        <input type="date" id="pr_nasc">
+      </div>
+
+      <div class="field">
+        <label>Número do Mandado</label>
+        <input type="text" id="pr_numero_mandado" placeholder="Ex: 0001234-56.2026.8.26.0000">
+      </div>
+      <div class="field">
+        <label>Link do Mandado (Opcional)</label>
+        <input type="text" id="pr_mandado_link" placeholder="Cole aqui o link da página/PDF do mandado">
+        <div class="field-hint">Ao tocar no alerta ou no marcador, esse link abre em uma nova aba.</div>
+      </div>
+
+      <div class="field">
+        <label>Endereço Conhecido</label>
+        <div class="loc-row">
+          <input type="text" id="pr_endereco" placeholder="Digite o endereço ou use os botões">
+          <button type="button" class="icon-btn-sm" id="pr_btnBuscarEndereco" title="Buscar endereço digitado">🔍</button>
+          <button type="button" class="icon-btn-sm" id="pr_btnGps" title="Usar GPS atual">📍</button>
+          <button type="button" class="icon-btn-sm" id="pr_btnMapPick" title="Selecionar local exato no mapa">🗺️</button>
+        </div>
+        <div class="field-hint" id="pr_locHint">Nenhuma localização definida ainda.</div>
+        <div class="addr-suggestion" id="pr_addrSuggestion">
+          💡 <span class="ast"></span>
+          <button type="button" class="addr-suggestion-use">Usar este texto</button>
+        </div>
+        <div class="field-hint" style="opacity:.65">Esse endereço é usado para o alerta de proximidade — ao passar perto, você será avisado automaticamente.</div>
+      </div>
+
+      <div class="field">
+        <label>Foto</label>
+        <div class="photo-zone" id="pr_photoZone">
+          <div class="ph-empty" id="pr_photoEmpty"><span class="ic">📷</span>Toque para tirar/anexar foto</div>
+          <img id="pr_photoPreview" style="display:none">
+          <input type="file" accept="image/*" capture="environment" id="pr_photoInput">
+        </div>
+        <button type="button" class="remove-photo" id="pr_removePhoto" style="display:none">Remover foto</button>
+      </div>
+
+      <div class="field">
+        <label>Motivo / Artigos do Mandado (Opcional)</label>
+        <div class="chip-row" id="pr_chipRow">
+          <div class="chip" data-artigo="Art. 155">Art. 155 — Furto</div>
+          <div class="chip" data-artigo="Art. 157">Art. 157 — Roubo</div>
+          <div class="chip" data-artigo="Art. 171">Art. 171 — Estelionato</div>
+          <div class="chip" data-artigo="Art. 33 Lei 11.343">Art. 33 — Tráfico</div>
+          <div class="chip" data-artigo="Art. 129">Art. 129 — Lesão Corporal</div>
+          <div class="chip" data-artigo="Art. 121">Art. 121 — Homicídio</div>
+        </div>
+        <div class="artigo-search-wrap">
+          <input type="text" id="pr_artigoSearch" placeholder="🔍 Buscar outro artigo (ex: receptação, 306, arma)..." autocomplete="off">
+          <div class="artigo-search-results" id="pr_artigoResults"></div>
+        </div>
+        <input type="hidden" id="pr_artigos">
+      </div>
+
+      <div class="field">
+        <label>Observações Adicionais</label>
+        <textarea id="pr_obs" placeholder="Detalhes adicionais sobre o procurado..."></textarea>
+      </div>
+
+      <button type="submit" class="save-btn">💾 Salvar Registro</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: LOCAL ILÍCITO ============ -->
+<div class="overlay" id="overlayLocal">
+  <div class="sheet">
+    <div class="sheet-header">
+      <h2>🏚️ <span id="tituloLocal">Novo Local Ilícito</span></h2>
+      <div class="close-x" data-close="overlayLocal">✕</div>
+    </div>
+    <form id="formLocal">
+      <input type="hidden" id="lo_id">
+
+      <div class="field">
+        <label>Referência / Nome do Local</label>
+        <input type="text" id="lo_nome" placeholder="Ex: Beco da Vila / Ponto do Zé">
+      </div>
+
+      <div class="field">
+        <label>Endereço</label>
+        <div class="loc-row">
+          <input type="text" id="lo_endereco" placeholder="Digite o endereço ou use os botões">
+          <button type="button" class="icon-btn-sm" id="lo_btnBuscarEndereco" title="Buscar endereço digitado">🔍</button>
+          <button type="button" class="icon-btn-sm" id="lo_btnGps" title="Usar GPS atual">📍</button>
+          <button type="button" class="icon-btn-sm" id="lo_btnMapPick" title="Selecionar local exato no mapa">🗺️</button>
+        </div>
+        <div class="field-hint" id="lo_locHint">Nenhuma localização definida ainda.</div>
+        <div class="addr-suggestion" id="lo_addrSuggestion">
+          💡 <span class="ast"></span>
+          <button type="button" class="addr-suggestion-use">Usar este texto</button>
+        </div>
+        <div class="field-hint" style="opacity:.65">O pino no mapa é o que vale oficialmente. Prefira digitar o endereço que você está vendo — a sugestão do mapa pode errar rua/bairro.</div>
+      </div>
+
+      <div class="field">
+        <label>Foto</label>
+        <div class="photo-zone" id="lo_photoZone">
+          <div class="ph-empty" id="lo_photoEmpty"><span class="ic">📷</span>Toque para tirar/anexar foto</div>
+          <img id="lo_photoPreview" style="display:none">
+          <input type="file" accept="image/*" capture="environment" id="lo_photoInput">
+        </div>
+        <button type="button" class="remove-photo" id="lo_removePhoto" style="display:none">Remover foto</button>
+      </div>
+
+      <div class="field">
+        <label>Nível de Ameaça</label>
+        <div class="threat-toggle">
+          <div class="threat-opt sel-normal active" data-val="normal">🏚️ Normal</div>
+          <div class="threat-opt sel-alto" data-val="alto">☠️ Alto Risco</div>
+        </div>
+        <input type="hidden" id="lo_nivel" value="normal">
+      </div>
+
+      <button type="submit" class="save-btn">💾 Salvar Registro</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ MODAL: ARQUIVO ============ -->
+<div class="overlay" id="archiveSheet">
+  <div class="sheet">
+    <div class="sheet-header">
+      <h2>🗂️ Arquivo de Registros</h2>
+      <div class="close-x" data-close="archiveSheet">✕</div>
+    </div>
+    <div class="tabs">
+      <div class="tab-btn active" data-tab="todos">🗂️ Todos</div>
+      <div class="tab-btn" data-tab="abordados">🚨 Abordados</div>
+      <div class="tab-btn" data-tab="locais">🏚️ Locais</div>
+      <div class="tab-btn" data-tab="procurados">🚓 Procurados</div>
+    </div>
+    <div class="arch-list" id="archList"></div>
+  </div>
+</div>
+
+<!-- ============ MODAL: FICHA DA PESSOA ============ -->
+<div class="overlay" id="personSheet">
+  <div class="sheet">
+    <div class="sheet-header">
+      <h2>👤 <span id="personTitulo">Ficha do Indivíduo</span></h2>
+      <div class="close-x" data-close="personSheet">✕</div>
+    </div>
+    <div id="personData"></div>
+    <div class="person-occ-title">Histórico de Abordagens (<span id="personOccCount">0</span>)</div>
+    <div class="arch-list" id="personOccList"></div>
+  </div>
+</div>
+
+<div id="toast" class="glass"></div>
+
+</div><!-- /#appRoot -->
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="app.js"></script>
+<script src="auth-sync.js"></script>
+</body>
+</html>

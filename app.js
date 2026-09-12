@@ -42,7 +42,7 @@ function saveData(key, arr){
     return true;
   }catch(e){
     console.error('Erro ao salvar storage', e);
-    toast('⚠️ Armazenamento local cheio. Apague fotos/registros antigos.', 'err');
+    toast('Armazenamento local cheio. Apague fotos/registros antigos.', 'err');
     return false;
   }
 }
@@ -89,19 +89,22 @@ map.addControl(new maplibregl.NavigationControl({ showCompass:false }), 'bottom-
 
 let userMarker = null;
 let userLatLng = null;
+const ALERT_RADIUS_KEY = 'mdt_alert_radius_v1';
+let PROCURADO_ALERT_RADIUS_M = parseInt(localStorage.getItem(ALERT_RADIUS_KEY), 10) || 200; // distância pra disparar o alerta
+function getClearRadius(){ return Math.round(PROCURADO_ALERT_RADIUS_M * 1.5); } // histerese: só "rearma" depois de se afastar bem
 let hasCenteredOnUser = false;
 
 function makeMarkerEl(type, nivel){
-  let cls='abordagem', emoji='🚨';
+  let cls='abordagem', iconName='siren';
   if(type==='local'){
     cls = nivel==='alto' ? 'local-alto' : 'local-normal';
-    emoji = nivel==='alto' ? '☠️' : '🏚️';
+    iconName = nivel==='alto' ? 'skull' : 'home';
   } else if(type==='procurado'){
-    cls = 'procurado'; emoji = '🚓';
+    cls = 'procurado'; iconName = 'shield-alert';
   }
   const el = document.createElement('div');
   el.className = 'mdt-marker';
-  el.innerHTML = `<div class="bubble ${cls}"><span>${emoji}</span></div>`;
+  el.innerHTML = `<div class="bubble ${cls}"><span><i data-lucide="${iconName}"></i></span></div>`;
   return el;
 }
 function makeUserMarkerEl(){
@@ -125,31 +128,31 @@ function popupAbordagem(item){
     <div class="row"><b>Local:</b> ${escapeHtml(item.endereco_abordagem)||'—'}</div>
     ${item.observacoes ? `<div class="row"><b>Obs:</b> ${escapeHtml(item.observacoes).slice(0,150)}</div>` : ''}
     <div class="pop-actions">
-      <button data-edit-ab="${item.id}">✏️ Editar</button>
-      <button data-del-ab="${item.id}">🗑️ Excluir</button>
+      <button data-edit-ab="${item.id}"><i data-lucide="pencil"></i> Editar</button>
+      <button data-del-ab="${item.id}"><i data-lucide="trash-2"></i> Excluir</button>
     </div>
   </div>`;
 }
 function popupLocal(item){
   const alto = item.nivel_ameaca==='alto';
   return `<div class="pop ${alto?'danger-pop':''}">
-    ${alto ? `<div class="pop-alert">⚠️ Alto Risco / Confronto Armado</div>` : ''}
+    ${alto ? `<div class="pop-alert"><i data-lucide="triangle-alert"></i> Alto Risco / Confronto Armado</div>` : ''}
     ${item.foto ? `<img src="${item.foto}">` : ''}
     <h3>${escapeHtml(item.nome_local)||'Local sem nome'}</h3>
     <div class="row"><b>Endereço:</b> ${escapeHtml(item.endereco)||'—'}</div>
-    <div class="row"><b>Nível:</b> ${alto? '☠️ Alto Risco':'🟡 Normal'}</div>
+    <div class="row"><b>Nível:</b> ${alto? '<i data-lucide="skull"></i> Alto Risco':'<i data-lucide="circle"></i> Normal'}</div>
     <div class="pop-actions">
-      <button data-edit-lo="${item.id}">✏️ Editar</button>
-      <button data-del-lo="${item.id}">🗑️ Excluir</button>
+      <button data-edit-lo="${item.id}"><i data-lucide="pencil"></i> Editar</button>
+      <button data-del-lo="${item.id}"><i data-lucide="trash-2"></i> Excluir</button>
     </div>
   </div>`;
 }
 
 function popupProcurado(item){
   const vulgo = item.vulgo ? ` <span style="color:var(--text-dim);font-weight:400;">"${escapeHtml(item.vulgo)}"</span>` : '';
-  const mandadoBtn = item.mandado_link ? `<button type="button" onclick="window.open('${escapeHtml(item.mandado_link)}','_blank')">📄 Mandado</button>` : '';
+  const mandadoBtn = item.mandado_link ? `<button type="button" onclick="window.open('${escapeHtml(item.mandado_link)}','_blank')"><i data-lucide="file-text"></i> Mandado</button>` : '';
   return `<div class="pop">
-    <div class="pop-alert">🚓 PROCURADO</div>
+    <div class="pop-alert"><i data-lucide="shield-alert"></i> PROCURADO</div>
     ${item.foto ? `<img src="${item.foto}">` : ''}
     <h3>${escapeHtml(item.nome)||'Não identificado'}${vulgo}</h3>
     <div class="row"><b>Doc:</b> ${escapeHtml(item.rg_cpf)||'Sem documento'}</div>
@@ -158,8 +161,8 @@ function popupProcurado(item){
     ${item.artigos ? `<div class="row"><b>Motivo:</b> ${escapeHtml(item.artigos)}</div>` : ''}
     <div class="pop-actions">
       ${mandadoBtn}
-      <button data-edit-pr="${item.id}">✏️ Editar</button>
-      <button data-del-pr="${item.id}">🗑️ Excluir</button>
+      <button data-edit-pr="${item.id}"><i data-lucide="pencil"></i> Editar</button>
+      <button data-del-pr="${item.id}"><i data-lucide="trash-2"></i> Excluir</button>
     </div>
   </div>`;
 }
@@ -176,6 +179,7 @@ function bindPopupButtons(popup){
     currentOpenPopup = popup;
     const node = popup.getElement();
     if(!node) return;
+    if(window.lucide) lucide.createIcons({ root: node });
     node.querySelectorAll('[data-edit-ab]').forEach(b=>b.onclick=()=>openAbordagemForm(b.dataset.editAb));
     node.querySelectorAll('[data-del-ab]').forEach(b=>b.onclick=()=>deleteAbordagem(b.dataset.delAb));
     node.querySelectorAll('[data-edit-lo]').forEach(b=>b.onclick=()=>openLocalForm(b.dataset.editLo));
@@ -238,6 +242,7 @@ function refreshMarkers(){
   document.getElementById('cntAbord').textContent = abordagens.length;
   document.getElementById('cntLocais').textContent = locais.length;
   document.getElementById('cntProcurados').textContent = procurados.length;
+  if(window.lucide) lucide.createIcons();
 }
 refreshMarkers();
 
@@ -250,6 +255,17 @@ document.getElementById('filterLocais').addEventListener('change', (e)=>{
 });
 document.getElementById('filterProcurados').addEventListener('change', (e)=>{
   allMarkers.pr.forEach(m=> m.getElement().style.display = e.target.checked ? '' : 'none');
+});
+
+/* ---------------- Controle de raio de alerta de Procurados ---------------- */
+const alertRadiusSlider = document.getElementById('alertRadiusSlider');
+const alertRadiusVal = document.getElementById('alertRadiusVal');
+alertRadiusSlider.value = PROCURADO_ALERT_RADIUS_M;
+alertRadiusVal.textContent = PROCURADO_ALERT_RADIUS_M + 'm';
+alertRadiusSlider.addEventListener('input', (e)=>{
+  PROCURADO_ALERT_RADIUS_M = parseInt(e.target.value, 10);
+  alertRadiusVal.textContent = PROCURADO_ALERT_RADIUS_M + 'm';
+  localStorage.setItem(ALERT_RADIUS_KEY, PROCURADO_ALERT_RADIUS_M);
 });
 
 /* ============================================================
@@ -363,8 +379,6 @@ async function forwardGeocode(query){
 }
 
 /* ---------------- Alerta de proximidade de Procurados ---------------- */
-const PROCURADO_ALERT_RADIUS_M = 200;   // distância pra disparar o alerta
-const PROCURADO_ALERT_CLEAR_RADIUS_M = 300; // histerese: só "rearma" depois de se afastar bem
 let nearbyProcuradosAlerted = new Set();
 let procuradoAlertQueue = [];
 let procuradoAlertShowing = false;
@@ -380,7 +394,7 @@ function checkProcuradoProximity(userPos){
         nearbyProcuradosAlerted.add(p.id);
         queueProcuradoAlert(p);
       }
-    } else if(d > PROCURADO_ALERT_CLEAR_RADIUS_M){
+    } else if(d > getClearRadius()){
       nearbyProcuradosAlerted.delete(p.id);
     }
   });
@@ -408,7 +422,7 @@ function showNextProcuradoAlert(){
   }
   document.getElementById('procuradoAlertCard').classList.add('show');
   if('vibrate' in navigator){ try{ navigator.vibrate([250,120,250,120,250]); }catch(e){} }
-  toast(`🚓 Procurado próximo: ${p.nome||'não identificado'}`, 'err');
+  toast(`Procurado próximo: ${p.nome||'não identificado'}`, 'err');
   clearTimeout(procuradoAlertAutoHideTimer);
   procuradoAlertAutoHideTimer = setTimeout(dismissProcuradoAlert, 12000);
 }
@@ -477,7 +491,8 @@ document.getElementById('recenterBtn').addEventListener('click', ()=>{
 document.getElementById('toggleUiBtn').addEventListener('click', ()=>{
   document.body.classList.toggle('ui-hidden');
   const btn = document.getElementById('toggleUiBtn');
-  btn.textContent = document.body.classList.contains('ui-hidden') ? '🗺️' : '👁️';
+  btn.innerHTML = document.body.classList.contains('ui-hidden') ? '<i data-lucide="eye-off"></i>' : '<i data-lucide="eye"></i>';
+  if(window.lucide) lucide.createIcons({ root: btn });
   document.getElementById('filtersPanel').classList.remove('open');
   document.getElementById('fabContainer').classList.remove('open');
 });
@@ -566,7 +581,7 @@ document.getElementById('locPickerConfirm').addEventListener('click', async ()=>
   if(targetPrefix==='ab'){ ab_selectedLoc = picked; setAbLocHint(true, 'Localização marcada manualmente no mapa'); }
   else { lo_selectedLoc = picked; setLoLocHint(true, 'Localização marcada manualmente no mapa'); }
 
-  toast('📍 Local marcado. Digite o endereço que você está vendo — o mapa só sugere, não preenche sozinho.', 'ok');
+  toast('Local marcado. Digite o endereço que você está vendo — o mapa só sugere, não preenche sozinho.', 'ok');
   try{
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${picked.lat}&lon=${picked.lng}&zoom=18&addressdetails=1`);
     const data = await res.json();
@@ -785,12 +800,13 @@ document.getElementById('ab_semDoc').addEventListener('change', (e)=>{
 
 function setAbLocHint(ok, text){
   const el = document.getElementById('ab_locHint');
-  el.textContent = ok ? `✅ ${text}` : `❌ ${text}`;
+  el.innerHTML = (ok ? '<i data-lucide="circle-check"></i> ' : '<i data-lucide="circle-x"></i> ') + escapeHtml(text);
   el.className = 'field-hint ' + (ok?'ok':'err');
+  if(window.lucide) lucide.createIcons({ root: el });
 }
 
 function gpsAccuracySuffix(){
-  return (lastGpsAccuracy && lastGpsAccuracy > 50) ? ` (⚠️ GPS impreciso, ±${Math.round(lastGpsAccuracy)}m — confira/ajuste com 🗺️)` : '';
+  return (lastGpsAccuracy && lastGpsAccuracy > 50) ? ` (GPS impreciso, ±${Math.round(lastGpsAccuracy)}m — confira/ajuste manualmente no mapa)` : '';
 }
 
 document.getElementById('ab_btnGps').addEventListener('click', async ()=>{
@@ -798,7 +814,7 @@ document.getElementById('ab_btnGps').addEventListener('click', async ()=>{
   ab_selectedLoc = { lat:userLatLng.lat, lng:userLatLng.lng };
   setAbLocHint(true, 'Coordenadas GPS atuais capturadas' + gpsAccuracySuffix());
   if(lastGpsAccuracy && lastGpsAccuracy > 50){
-    toast(`⚠️ Sinal de GPS impreciso (±${Math.round(lastGpsAccuracy)}m). Confira o endereço ou ajuste com 🗺️ Selecionar no Mapa.`, 'err');
+    toast(`Sinal de GPS impreciso (±${Math.round(lastGpsAccuracy)}m). Confira o endereço ou ajuste manualmente no mapa.`, 'err');
   }
   try{
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${userLatLng.lat}&lon=${userLatLng.lng}&zoom=18&addressdetails=1`);
@@ -863,7 +879,7 @@ function checkAbAutoFill(silent){
 
   const wantedMatch = procurados.find(p=> p.rg_cpf && p.rg_cpf.trim()===doc);
   if(wantedMatch){
-    toast(`🚓⚠️ ATENÇÃO: este documento consta como PROCURADO — ${wantedMatch.nome||'nome não informado'}`, 'err');
+    toast(`ATENÇÃO: este documento consta como PROCURADO — ${wantedMatch.nome||'nome não informado'}`, 'err');
     if('vibrate' in navigator){ try{ navigator.vibrate([300,100,300,100,300]); }catch(e){} }
   }
 }
@@ -905,7 +921,7 @@ document.getElementById('formAbordagem').addEventListener('submit', (e)=>{
   if(saveData(STORAGE_KEYS.abordagens, abordagens)){
     refreshMarkers();
     closeOverlay('overlayAbordagem');
-    toast(isEdit? '✅ Abordagem atualizada' : '✅ Abordagem registrada', 'ok');
+    toast(isEdit? 'Abordagem atualizada' : 'Abordagem registrada', 'ok');
     if(window.MDT_HOOKS && window.MDT_HOOKS.onSave) window.MDT_HOOKS.onSave('abordagens', item);
   }
 });
@@ -1013,8 +1029,9 @@ document.getElementById('pr_semDoc').addEventListener('change', (e)=>{
 
 function setPrLocHint(ok, text){
   const el = document.getElementById('pr_locHint');
-  el.textContent = ok ? `✅ ${text}` : `❌ ${text}`;
+  el.innerHTML = (ok ? '<i data-lucide="circle-check"></i> ' : '<i data-lucide="circle-x"></i> ') + escapeHtml(text);
   el.className = 'field-hint ' + (ok?'ok':'err');
+  if(window.lucide) lucide.createIcons({ root: el });
 }
 
 document.getElementById('pr_btnGps').addEventListener('click', async ()=>{
@@ -1022,7 +1039,7 @@ document.getElementById('pr_btnGps').addEventListener('click', async ()=>{
   pr_selectedLoc = { lat:userLatLng.lat, lng:userLatLng.lng };
   setPrLocHint(true, 'Coordenadas GPS atuais capturadas' + gpsAccuracySuffix());
   if(lastGpsAccuracy && lastGpsAccuracy > 50){
-    toast(`⚠️ Sinal de GPS impreciso (±${Math.round(lastGpsAccuracy)}m). Confira o endereço ou ajuste com 🗺️ Selecionar no Mapa.`, 'err');
+    toast(`Sinal de GPS impreciso (±${Math.round(lastGpsAccuracy)}m). Confira o endereço ou ajuste manualmente no mapa.`, 'err');
   }
   try{
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${userLatLng.lat}&lon=${userLatLng.lng}&zoom=18&addressdetails=1`);
@@ -1125,7 +1142,7 @@ document.getElementById('formProcurado').addEventListener('submit', (e)=>{
   if(saveData(STORAGE_KEYS.procurados, procurados)){
     refreshMarkers();
     closeOverlay('overlayProcurado');
-    toast(isEdit? '✅ Procurado atualizado' : '✅ Procurado registrado', 'ok');
+    toast(isEdit? 'Procurado atualizado' : 'Procurado registrado', 'ok');
     if(window.MDT_HOOKS && window.MDT_HOOKS.onSave) window.MDT_HOOKS.onSave('procurados', item);
   }
 });
@@ -1188,8 +1205,9 @@ document.getElementById('btnNovoLocal').addEventListener('click', ()=>{ fabConta
 
 function setLoLocHint(ok, text){
   const el = document.getElementById('lo_locHint');
-  el.textContent = ok ? `✅ ${text}` : `❌ ${text}`;
+  el.innerHTML = (ok ? '<i data-lucide="circle-check"></i> ' : '<i data-lucide="circle-x"></i> ') + escapeHtml(text);
   el.className = 'field-hint ' + (ok?'ok':'err');
+  if(window.lucide) lucide.createIcons({ root: el });
 }
 
 document.querySelectorAll('.threat-opt').forEach(opt=>{
@@ -1206,7 +1224,7 @@ document.getElementById('lo_btnGps').addEventListener('click', async ()=>{
   lo_selectedLoc = { lat:userLatLng.lat, lng:userLatLng.lng };
   setLoLocHint(true, 'Coordenadas GPS atuais capturadas' + gpsAccuracySuffix());
   if(lastGpsAccuracy && lastGpsAccuracy > 50){
-    toast(`⚠️ Sinal de GPS impreciso (±${Math.round(lastGpsAccuracy)}m). Confira o endereço ou ajuste com 🗺️ Selecionar no Mapa.`, 'err');
+    toast(`Sinal de GPS impreciso (±${Math.round(lastGpsAccuracy)}m). Confira o endereço ou ajuste manualmente no mapa.`, 'err');
   }
   try{
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${userLatLng.lat}&lon=${userLatLng.lng}&zoom=18&addressdetails=1`);
@@ -1279,7 +1297,7 @@ document.getElementById('formLocal').addEventListener('submit', (e)=>{
   if(saveData(STORAGE_KEYS.locais, locais)){
     refreshMarkers();
     closeOverlay('overlayLocal');
-    toast(isEdit? '✅ Local atualizado' : '✅ Local registrado', 'ok');
+    toast(isEdit? 'Local atualizado' : 'Local registrado', 'ok');
     if(window.MDT_HOOKS && window.MDT_HOOKS.onSave) window.MDT_HOOKS.onSave('locais', item);
   }
 });
@@ -1294,7 +1312,7 @@ function deleteAbordagem(id){
   refreshMarkers();
   renderArchiveList();
   closeAnyOpenPopup();
-  toast('🗑️ Registro excluído', 'ok');
+  toast('Registro excluído', 'ok');
   if(window.MDT_HOOKS && window.MDT_HOOKS.onDelete) window.MDT_HOOKS.onDelete('abordagens', id);
 }
 function deleteLocal(id){
@@ -1304,7 +1322,7 @@ function deleteLocal(id){
   refreshMarkers();
   renderArchiveList();
   closeAnyOpenPopup();
-  toast('🗑️ Registro excluído', 'ok');
+  toast('Registro excluído', 'ok');
   if(window.MDT_HOOKS && window.MDT_HOOKS.onDelete) window.MDT_HOOKS.onDelete('locais', id);
 }
 function deleteProcurado(id){
@@ -1315,7 +1333,7 @@ function deleteProcurado(id){
   refreshMarkers();
   renderArchiveList();
   closeAnyOpenPopup();
-  toast('🗑️ Registro excluído', 'ok');
+  toast('Registro excluído', 'ok');
   if(window.MDT_HOOKS && window.MDT_HOOKS.onDelete) window.MDT_HOOKS.onDelete('procurados', id);
 }
 
@@ -1372,7 +1390,7 @@ function buildAbordadoCard(rep){
   const card = document.createElement('div');
   card.className='arch-card';
   const count = rep._occorrencias.length;
-  const thumb = rep.foto ? `<img class="thumb" src="${rep.foto}">` : `<div class="thumb placeholder">🚨</div>`;
+  const thumb = rep.foto ? `<img class="thumb" src="${rep.foto}">` : `<div class="thumb placeholder"><i data-lucide="siren"></i></div>`;
   const title = (rep.nome || 'Não identificado') + (rep.vulgo? ` "${rep.vulgo}"`:'');
   const sub = rep._occorrencias[0].endereco_abordagem || 'Sem endereço';
   const badge = count>1 ? `<span class="badge-count">${count}×</span>` : '';
@@ -1384,8 +1402,8 @@ function buildAbordadoCard(rep){
       <div class="t3">${fmtDateShort(rep._occorrencias[0].atualizadoEm)}</div>
     </div>
     <div class="arch-actions">
-      <button class="a-loc" title="Localizar">🎯</button>
-      <button class="a-profile" title="Ver Ficha">👤</button>
+      <button class="a-loc" title="Localizar"><i data-lucide="locate-fixed"></i></button>
+      <button class="a-profile" title="Ver Ficha"><i data-lucide="user"></i></button>
     </div>`;
   card.querySelector('.a-loc').onclick = ()=>{
     const withLoc = rep._occorrencias.find(o=>o.lat!=null && o.lng!=null);
@@ -1402,7 +1420,7 @@ function buildAbordadoCard(rep){
 function buildLocalCard(item){
   const card = document.createElement('div');
   card.className='arch-card';
-  const thumb = item.foto ? `<img class="thumb" src="${item.foto}">` : `<div class="thumb placeholder">${item.nivel_ameaca==='alto'?'☠️':'🏚️'}</div>`;
+  const thumb = item.foto ? `<img class="thumb" src="${item.foto}">` : `<div class="thumb placeholder">${item.nivel_ameaca==='alto'?'<i data-lucide="skull"></i>':'<i data-lucide="home"></i>'}</div>`;
   const title = item.nome_local || 'Local sem nome';
   const sub = item.endereco || 'Sem endereço';
   const badge = item.nivel_ameaca==='alto' ? '<span class="badge-alto">ALTO RISCO</span>' : '';
@@ -1414,9 +1432,9 @@ function buildLocalCard(item){
       <div class="t3">${fmtDateShort(item.atualizadoEm)}</div>
     </div>
     <div class="arch-actions">
-      <button class="a-loc" title="Localizar">🎯</button>
-      <button class="a-edit" title="Editar">✏️</button>
-      <button class="a-del" title="Excluir">🗑️</button>
+      <button class="a-loc" title="Localizar"><i data-lucide="locate-fixed"></i></button>
+      <button class="a-edit" title="Editar"><i data-lucide="pencil"></i></button>
+      <button class="a-del" title="Excluir"><i data-lucide="trash-2"></i></button>
     </div>`;
   card.querySelector('.a-loc').onclick = ()=>{
     if(item.lat==null||item.lng==null){ toast('Este registro não possui localização.', 'err'); return; }
@@ -1433,7 +1451,7 @@ function buildLocalCard(item){
 function buildProcuradoCard(item){
   const card = document.createElement('div');
   card.className='arch-card';
-  const thumb = item.foto ? `<img class="thumb" src="${item.foto}">` : `<div class="thumb placeholder">🚓</div>`;
+  const thumb = item.foto ? `<img class="thumb" src="${item.foto}">` : `<div class="thumb placeholder"><i data-lucide="shield-alert"></i></div>`;
   const title = (item.nome || 'Não identificado') + (item.vulgo? ` "${item.vulgo}"`:'');
   const sub = item.endereco || 'Sem endereço';
   const badge = '<span class="badge-alto">PROCURADO</span>';
@@ -1445,9 +1463,9 @@ function buildProcuradoCard(item){
       <div class="t3">${item.numero_mandado ? 'Mandado: '+escapeHtml(item.numero_mandado) : fmtDateShort(item.atualizadoEm)}</div>
     </div>
     <div class="arch-actions">
-      <button class="a-loc" title="Localizar">🎯</button>
-      <button class="a-edit" title="Editar">✏️</button>
-      <button class="a-del" title="Excluir">🗑️</button>
+      <button class="a-loc" title="Localizar"><i data-lucide="locate-fixed"></i></button>
+      <button class="a-edit" title="Editar"><i data-lucide="pencil"></i></button>
+      <button class="a-del" title="Excluir"><i data-lucide="trash-2"></i></button>
     </div>`;
   card.querySelector('.a-loc').onclick = ()=>{
     if(item.lat==null||item.lng==null){ toast('Este registro não possui localização.', 'err'); return; }
@@ -1488,6 +1506,7 @@ function renderArchiveList(){
       list.appendChild(card);
     });
   }
+  if(window.lucide) lucide.createIcons({ root: list });
 }
 
 /* ---------------- Ficha da Pessoa (histórico de abordagens) ---------------- */
@@ -1495,7 +1514,7 @@ function openPersonProfile(key){
   const rep = getPersonGroups().find(g=>g._key===key);
   if(!rep) return;
   document.getElementById('personTitulo').textContent = rep.nome || 'Não identificado';
-  const photoBlock = rep.foto ? `<img src="${rep.foto}">` : `<div class="ph-placeholder">🚨</div>`;
+  const photoBlock = rep.foto ? `<img src="${rep.foto}">` : `<div class="ph-placeholder"><i data-lucide="siren"></i></div>`;
   document.getElementById('personData').innerHTML = `
     <div class="person-photo-row">
       ${photoBlock}
@@ -1514,7 +1533,7 @@ function openPersonProfile(key){
   rep._occorrencias.forEach(occ=>{
     const card = document.createElement('div');
     card.className='arch-card';
-    const thumb = occ.foto ? `<img class="thumb" src="${occ.foto}">` : `<div class="thumb placeholder">🚨</div>`;
+    const thumb = occ.foto ? `<img class="thumb" src="${occ.foto}">` : `<div class="thumb placeholder"><i data-lucide="siren"></i></div>`;
     const artigosTxt = occ.artigos ? escapeHtml(occ.artigos) : 'Sem artigos registrados';
     card.innerHTML = `
       ${thumb}
@@ -1524,9 +1543,9 @@ function openPersonProfile(key){
         <div class="t3">${artigosTxt}</div>
       </div>
       <div class="arch-actions">
-        <button class="a-loc" title="Localizar">🎯</button>
-        <button class="a-edit" title="Editar">✏️</button>
-        <button class="a-del" title="Excluir">🗑️</button>
+        <button class="a-loc" title="Localizar"><i data-lucide="locate-fixed"></i></button>
+        <button class="a-edit" title="Editar"><i data-lucide="pencil"></i></button>
+        <button class="a-del" title="Excluir"><i data-lucide="trash-2"></i></button>
       </div>`;
     card.querySelector('.a-loc').onclick = ()=>{
       if(occ.lat==null||occ.lng==null){ toast('Este registro não possui localização.', 'err'); return; }
@@ -1544,10 +1563,11 @@ function openPersonProfile(key){
       const stillExists = abordagens.some(x=>getPersonKey(x)===key);
       if(stillExists){ openPersonProfile(key); } else { closeOverlay('personSheet'); }
       renderArchiveList();
-      toast('🗑️ Registro excluído', 'ok');
+      toast('Registro excluído', 'ok');
     };
     occList.appendChild(card);
   });
+  if(window.lucide) lucide.createIcons({ root: document.getElementById('personSheet') });
   closeOverlay('archiveSheet');
   openOverlay('personSheet');
 }
@@ -1556,6 +1576,7 @@ function openPersonProfile(key){
    Inicialização
    ============================================================ */
 refreshMarkers();
+if(window.lucide) lucide.createIcons(); // ícones estáticos do HTML (login, botões, cabeçalhos)
 toast('MDT Tático inicializado', 'ok');
 
 /* ============================================================

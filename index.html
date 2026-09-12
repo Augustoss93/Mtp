@@ -16,7 +16,7 @@
 <!-- ============ TELA DE LOGIN (gate de acesso) ============ -->
 <div id="loginScreen">
   <div class="login-card glass">
-    <div class="login-logo">🛡️<br>MDT Tático</div>
+    <div class="login-logo"><i data-lucide="shield" class="login-icon"></i><br>MDT Tático</div>
     <div class="login-sub">Terminal de dados — acesso restrito</div>
     <div class="field">
       <label>E-mail</label>
@@ -39,43 +39,49 @@
 <!-- Endereço atual -->
 <div id="addressPanel" class="glass">
   <div class="gps-dot searching" id="gpsDot"></div>
-  <div class="pin">📍</div>
+  <div class="pin"><i data-lucide="map-pin"></i></div>
   <div class="addr-text">
     <div class="addr-main" id="addrMain">Obtendo localização GPS...</div>
     <div class="addr-sub" id="addrSub">Aguardando sinal</div>
   </div>
-  <div id="syncIndicator" title="Status de sincronização">☁️</div>
+  <div id="syncIndicator" title="Status de sincronização"><i data-lucide="cloud"></i></div>
 </div>
 
 <!-- Botão ocultar/mostrar interface -->
-<div id="toggleUiBtn" class="glass" title="Ocultar/Mostrar Interface">👁️</div>
+<div id="toggleUiBtn" class="glass" title="Ocultar/Mostrar Interface"><i data-lucide="eye"></i></div>
 
 <!-- Filtros: ícone recolhido + painel -->
-<div id="filtersToggleBtn" class="glass" title="Filtros de camadas">🎚️</div>
+<div id="filtersToggleBtn" class="glass" title="Filtros de camadas"><i data-lucide="sliders-horizontal"></i></div>
 <div id="filtersPanel" class="glass">
   <div class="f-title">Camadas do Mapa</div>
-  <label class="f-row"><input type="checkbox" id="filterAbordagens" checked> 🚨 Abordagens <span class="cnt" id="cntAbord">0</span></label>
-  <label class="f-row"><input type="checkbox" id="filterLocais" checked> 🏚️ Locais Ilícitos <span class="cnt" id="cntLocais">0</span></label>
-  <label class="f-row"><input type="checkbox" id="filterProcurados" checked> 🚓 Procurados <span class="cnt" id="cntProcurados">0</span></label>
+  <label class="f-row"><input type="checkbox" id="filterAbordagens" checked> <i data-lucide="siren" class="f-ic"></i> Abordagens <span class="cnt" id="cntAbord">0</span></label>
+  <label class="f-row"><input type="checkbox" id="filterLocais" checked> <i data-lucide="home" class="f-ic"></i> Locais Ilícitos <span class="cnt" id="cntLocais">0</span></label>
+  <label class="f-row"><input type="checkbox" id="filterProcurados" checked> <i data-lucide="shield-alert" class="f-ic"></i> Procurados <span class="cnt" id="cntProcurados">0</span></label>
+  <div class="f-divider"></div>
+  <div class="f-title">Raio de Alerta — Procurados</div>
+  <div class="f-radius-row">
+    <input type="range" id="alertRadiusSlider" min="50" max="1000" step="50" value="200">
+    <span class="f-radius-val" id="alertRadiusVal">200m</span>
+  </div>
 </div>
 
 <!-- Recentralizar -->
-<div id="recenterBtn" class="glass" title="Centralizar no GPS">🎯</div>
+<div id="recenterBtn" class="glass" title="Centralizar no GPS"><i data-lucide="locate-fixed"></i></div>
 
 <!-- Toolbar inferior: Arquivo + FAB de ações -->
 <div id="toolbar">
-  <div class="tool-btn glass" id="btnArquivo"><div class="ic">🗂️</div><div class="lb">Arquivo</div></div>
+  <div class="tool-btn glass" id="btnArquivo"><div class="ic"><i data-lucide="folder-open"></i></div><div class="lb">Arquivo</div></div>
   <div class="fab-container" id="fabContainer">
-    <div class="fab-sub glass" id="btnNovoProcurado"><span class="ic">🚓</span><span class="lb">Procurado</span></div>
-    <div class="fab-sub glass" id="btnNovoLocal"><span class="ic">🏚️</span><span class="lb">Local Ilícito</span></div>
-    <div class="fab-sub glass" id="btnNovaAbordagem"><span class="ic">🚨</span><span class="lb">Abordagem</span></div>
-    <div class="fab-main glass" id="fabMain">➕</div>
+    <div class="fab-sub glass" id="btnNovoProcurado"><span class="ic"><i data-lucide="shield-alert"></i></span><span class="lb">Procurado</span></div>
+    <div class="fab-sub glass" id="btnNovoLocal"><span class="ic"><i data-lucide="home"></i></span><span class="lb">Local Ilícito</span></div>
+    <div class="fab-sub glass" id="btnNovaAbordagem"><span class="ic"><i data-lucide="siren"></i></span><span class="lb">Abordagem</span></div>
+    <div class="fab-main glass" id="fabMain"><i data-lucide="plus"></i></div>
   </div>
 </div>
 
 <!-- Alerta de procurado próximo (banner, não bloqueia o mapa) -->
 <div id="procuradoAlertCard">
-  <div class="pa-header">🚓 Procurado nas proximidades</div>
+  <div class="pa-header"><i data-lucide="shield-alert"></i> Procurado nas proximidades</div>
   <div class="pa-body">
     <img id="pa_foto" style="display:none">
     <div class="pa-info">
@@ -84,19 +90,19 @@
     </div>
   </div>
   <div class="pa-actions">
-    <button type="button" id="pa_btnMandado">📄 Ver Mandado</button>
+    <button type="button" id="pa_btnMandado"><i data-lucide="file-text"></i> Ver Mandado</button>
     <button type="button" id="pa_btnFechar">Dispensar</button>
   </div>
 </div>
 
 <!-- Seletor de localização exata no mapa (pin-drop) -->
 <div id="locPicker" class="loc-picker">
-  <div class="loc-picker-crosshair">📍</div>
+  <div class="loc-picker-crosshair"><i data-lucide="map-pin"></i></div>
   <div class="loc-picker-bar glass">
     <div class="loc-picker-hint">Arraste o mapa até o local exato — o marcador fica fixo no centro</div>
     <div class="loc-picker-actions">
       <button type="button" class="btn-inline secondary" id="locPickerCancel">Cancelar</button>
-      <button type="button" class="btn-inline" id="locPickerConfirm">✅ Confirmar Localização</button>
+      <button type="button" class="btn-inline" id="locPickerConfirm"><i data-lucide="circle-check"></i> Confirmar Localização</button>
     </div>
   </div>
 </div>
@@ -105,8 +111,8 @@
 <div class="overlay" id="overlayAbordagem">
   <div class="sheet">
     <div class="sheet-header">
-      <h2>🚨 <span id="tituloAbordagem">Nova Abordagem</span></h2>
-      <div class="close-x" data-close="overlayAbordagem">✕</div>
+      <h2><i data-lucide="siren"></i> <span id="tituloAbordagem">Nova Abordagem</span></h2>
+      <div class="close-x" data-close="overlayAbordagem"><i data-lucide="x"></i></div>
     </div>
     <form id="formAbordagem">
       <input type="hidden" id="ab_id">
@@ -115,9 +121,9 @@
         <label>RG / CPF</label>
         <div class="loc-row">
           <input type="text" id="ab_doc" placeholder="00.000.000-0 ou 000.000.000-00" autocomplete="off">
-          <button type="button" class="btn-inline" id="ab_btnVerificar">🔍 Verificar</button>
+          <button type="button" class="btn-inline" id="ab_btnVerificar"><i data-lucide="search"></i> Verificar</button>
         </div>
-        <div class="autofill-flag" id="ab_autofill_flag">✅ Registro anterior encontrado — dados preenchidos</div>
+        <div class="autofill-flag" id="ab_autofill_flag"><i data-lucide="circle-check"></i> Registro anterior encontrado — dados preenchidos</div>
       </div>
       <label class="check-row"><input type="checkbox" id="ab_semDoc"> Pessoa sem documento</label>
 
@@ -146,13 +152,13 @@
         <label>Endereço da Abordagem</label>
         <div class="loc-row">
           <input type="text" id="ab_endereco" placeholder="Digite o endereço ou use os botões">
-          <button type="button" class="icon-btn-sm" id="ab_btnBuscarEndereco" title="Buscar endereço digitado">🔍</button>
-          <button type="button" class="icon-btn-sm" id="ab_btnGps" title="Usar GPS atual">📍</button>
-          <button type="button" class="icon-btn-sm" id="ab_btnMapPick" title="Selecionar local exato no mapa">🗺️</button>
+          <button type="button" class="icon-btn-sm" id="ab_btnBuscarEndereco" title="Buscar endereço digitado"><i data-lucide="search"></i></button>
+          <button type="button" class="icon-btn-sm" id="ab_btnGps" title="Usar GPS atual"><i data-lucide="map-pin"></i></button>
+          <button type="button" class="icon-btn-sm" id="ab_btnMapPick" title="Selecionar local exato no mapa"><i data-lucide="map"></i></button>
         </div>
         <div class="field-hint" id="ab_locHint">Nenhuma localização definida ainda.</div>
         <div class="addr-suggestion" id="ab_addrSuggestion">
-          💡 <span class="ast"></span>
+          <i data-lucide="lightbulb"></i> <span class="ast"></span>
           <button type="button" class="addr-suggestion-use">Usar este texto</button>
         </div>
         <div class="field-hint" style="opacity:.65">O pino no mapa é o que vale oficialmente. Prefira digitar o endereço que você está vendo — a sugestão do mapa pode errar rua/bairro.</div>
@@ -161,7 +167,7 @@
       <div class="field">
         <label>Foto</label>
         <div class="photo-zone" id="ab_photoZone">
-          <div class="ph-empty" id="ab_photoEmpty"><span class="ic">📷</span>Toque para tirar/anexar foto</div>
+          <div class="ph-empty" id="ab_photoEmpty"><span class="ic"><i data-lucide="camera"></i></span>Toque para tirar/anexar foto</div>
           <img id="ab_photoPreview" style="display:none">
           <input type="file" accept="image/*" capture="environment" id="ab_photoInput">
         </div>
@@ -182,7 +188,7 @@
           <div class="chip" data-artigo="Art. 121">Art. 121 — Homicídio</div>
         </div>
         <div class="artigo-search-wrap">
-          <input type="text" id="ab_artigoSearch" placeholder="🔍 Buscar outro artigo (ex: receptação, 306, arma)..." autocomplete="off">
+          <input type="text" id="ab_artigoSearch" placeholder="Buscar outro artigo (ex: receptação, 306, arma)..." autocomplete="off">
           <div class="artigo-search-results" id="ab_artigoResults"></div>
         </div>
         <input type="hidden" id="ab_artigos">
@@ -193,7 +199,7 @@
         <textarea id="ab_obs" placeholder="Detalhes sobre o indivíduo, comportamento, veículos, etc."></textarea>
       </div>
 
-      <button type="submit" class="save-btn">💾 Salvar Registro</button>
+      <button type="submit" class="save-btn"><i data-lucide="save"></i> Salvar Registro</button>
     </form>
   </div>
 </div>
@@ -202,8 +208,8 @@
 <div class="overlay" id="overlayProcurado">
   <div class="sheet">
     <div class="sheet-header">
-      <h2>🚓 <span id="tituloProcurado">Novo Procurado</span></h2>
-      <div class="close-x" data-close="overlayProcurado">✕</div>
+      <h2><i data-lucide="shield-alert"></i> <span id="tituloProcurado">Novo Procurado</span></h2>
+      <div class="close-x" data-close="overlayProcurado"><i data-lucide="x"></i></div>
     </div>
     <form id="formProcurado">
       <input type="hidden" id="pr_id">
@@ -212,9 +218,9 @@
         <label>RG / CPF</label>
         <div class="loc-row">
           <input type="text" id="pr_doc" placeholder="00.000.000-0 ou 000.000.000-00" autocomplete="off">
-          <button type="button" class="btn-inline" id="pr_btnVerificar">🔍 Verificar</button>
+          <button type="button" class="btn-inline" id="pr_btnVerificar"><i data-lucide="search"></i> Verificar</button>
         </div>
-        <div class="autofill-flag" id="pr_autofill_flag">✅ Registro anterior encontrado — dados preenchidos</div>
+        <div class="autofill-flag" id="pr_autofill_flag"><i data-lucide="circle-check"></i> Registro anterior encontrado — dados preenchidos</div>
       </div>
       <label class="check-row"><input type="checkbox" id="pr_semDoc"> Pessoa sem documento</label>
 
@@ -249,13 +255,13 @@
         <label>Endereço Conhecido</label>
         <div class="loc-row">
           <input type="text" id="pr_endereco" placeholder="Digite o endereço ou use os botões">
-          <button type="button" class="icon-btn-sm" id="pr_btnBuscarEndereco" title="Buscar endereço digitado">🔍</button>
-          <button type="button" class="icon-btn-sm" id="pr_btnGps" title="Usar GPS atual">📍</button>
-          <button type="button" class="icon-btn-sm" id="pr_btnMapPick" title="Selecionar local exato no mapa">🗺️</button>
+          <button type="button" class="icon-btn-sm" id="pr_btnBuscarEndereco" title="Buscar endereço digitado"><i data-lucide="search"></i></button>
+          <button type="button" class="icon-btn-sm" id="pr_btnGps" title="Usar GPS atual"><i data-lucide="map-pin"></i></button>
+          <button type="button" class="icon-btn-sm" id="pr_btnMapPick" title="Selecionar local exato no mapa"><i data-lucide="map"></i></button>
         </div>
         <div class="field-hint" id="pr_locHint">Nenhuma localização definida ainda.</div>
         <div class="addr-suggestion" id="pr_addrSuggestion">
-          💡 <span class="ast"></span>
+          <i data-lucide="lightbulb"></i> <span class="ast"></span>
           <button type="button" class="addr-suggestion-use">Usar este texto</button>
         </div>
         <div class="field-hint" style="opacity:.65">Esse endereço é usado para o alerta de proximidade — ao passar perto, você será avisado automaticamente.</div>
@@ -264,7 +270,7 @@
       <div class="field">
         <label>Foto</label>
         <div class="photo-zone" id="pr_photoZone">
-          <div class="ph-empty" id="pr_photoEmpty"><span class="ic">📷</span>Toque para tirar/anexar foto</div>
+          <div class="ph-empty" id="pr_photoEmpty"><span class="ic"><i data-lucide="camera"></i></span>Toque para tirar/anexar foto</div>
           <img id="pr_photoPreview" style="display:none">
           <input type="file" accept="image/*" capture="environment" id="pr_photoInput">
         </div>
@@ -282,7 +288,7 @@
           <div class="chip" data-artigo="Art. 121">Art. 121 — Homicídio</div>
         </div>
         <div class="artigo-search-wrap">
-          <input type="text" id="pr_artigoSearch" placeholder="🔍 Buscar outro artigo (ex: receptação, 306, arma)..." autocomplete="off">
+          <input type="text" id="pr_artigoSearch" placeholder="Buscar outro artigo (ex: receptação, 306, arma)..." autocomplete="off">
           <div class="artigo-search-results" id="pr_artigoResults"></div>
         </div>
         <input type="hidden" id="pr_artigos">
@@ -293,7 +299,7 @@
         <textarea id="pr_obs" placeholder="Detalhes adicionais sobre o procurado..."></textarea>
       </div>
 
-      <button type="submit" class="save-btn">💾 Salvar Registro</button>
+      <button type="submit" class="save-btn"><i data-lucide="save"></i> Salvar Registro</button>
     </form>
   </div>
 </div>
@@ -302,8 +308,8 @@
 <div class="overlay" id="overlayLocal">
   <div class="sheet">
     <div class="sheet-header">
-      <h2>🏚️ <span id="tituloLocal">Novo Local Ilícito</span></h2>
-      <div class="close-x" data-close="overlayLocal">✕</div>
+      <h2><i data-lucide="home"></i> <span id="tituloLocal">Novo Local Ilícito</span></h2>
+      <div class="close-x" data-close="overlayLocal"><i data-lucide="x"></i></div>
     </div>
     <form id="formLocal">
       <input type="hidden" id="lo_id">
@@ -317,13 +323,13 @@
         <label>Endereço</label>
         <div class="loc-row">
           <input type="text" id="lo_endereco" placeholder="Digite o endereço ou use os botões">
-          <button type="button" class="icon-btn-sm" id="lo_btnBuscarEndereco" title="Buscar endereço digitado">🔍</button>
-          <button type="button" class="icon-btn-sm" id="lo_btnGps" title="Usar GPS atual">📍</button>
-          <button type="button" class="icon-btn-sm" id="lo_btnMapPick" title="Selecionar local exato no mapa">🗺️</button>
+          <button type="button" class="icon-btn-sm" id="lo_btnBuscarEndereco" title="Buscar endereço digitado"><i data-lucide="search"></i></button>
+          <button type="button" class="icon-btn-sm" id="lo_btnGps" title="Usar GPS atual"><i data-lucide="map-pin"></i></button>
+          <button type="button" class="icon-btn-sm" id="lo_btnMapPick" title="Selecionar local exato no mapa"><i data-lucide="map"></i></button>
         </div>
         <div class="field-hint" id="lo_locHint">Nenhuma localização definida ainda.</div>
         <div class="addr-suggestion" id="lo_addrSuggestion">
-          💡 <span class="ast"></span>
+          <i data-lucide="lightbulb"></i> <span class="ast"></span>
           <button type="button" class="addr-suggestion-use">Usar este texto</button>
         </div>
         <div class="field-hint" style="opacity:.65">O pino no mapa é o que vale oficialmente. Prefira digitar o endereço que você está vendo — a sugestão do mapa pode errar rua/bairro.</div>
@@ -332,7 +338,7 @@
       <div class="field">
         <label>Foto</label>
         <div class="photo-zone" id="lo_photoZone">
-          <div class="ph-empty" id="lo_photoEmpty"><span class="ic">📷</span>Toque para tirar/anexar foto</div>
+          <div class="ph-empty" id="lo_photoEmpty"><span class="ic"><i data-lucide="camera"></i></span>Toque para tirar/anexar foto</div>
           <img id="lo_photoPreview" style="display:none">
           <input type="file" accept="image/*" capture="environment" id="lo_photoInput">
         </div>
@@ -342,13 +348,13 @@
       <div class="field">
         <label>Nível de Ameaça</label>
         <div class="threat-toggle">
-          <div class="threat-opt sel-normal active" data-val="normal">🏚️ Normal</div>
-          <div class="threat-opt sel-alto" data-val="alto">☠️ Alto Risco</div>
+          <div class="threat-opt sel-normal active" data-val="normal"><i data-lucide="home"></i> Normal</div>
+          <div class="threat-opt sel-alto" data-val="alto"><i data-lucide="skull"></i> Alto Risco</div>
         </div>
         <input type="hidden" id="lo_nivel" value="normal">
       </div>
 
-      <button type="submit" class="save-btn">💾 Salvar Registro</button>
+      <button type="submit" class="save-btn"><i data-lucide="save"></i> Salvar Registro</button>
     </form>
   </div>
 </div>
@@ -357,14 +363,14 @@
 <div class="overlay" id="archiveSheet">
   <div class="sheet">
     <div class="sheet-header">
-      <h2>🗂️ Arquivo de Registros</h2>
-      <div class="close-x" data-close="archiveSheet">✕</div>
+      <h2><i data-lucide="folder-open"></i> Arquivo de Registros</h2>
+      <div class="close-x" data-close="archiveSheet"><i data-lucide="x"></i></div>
     </div>
     <div class="tabs">
-      <div class="tab-btn active" data-tab="todos">🗂️ Todos</div>
-      <div class="tab-btn" data-tab="abordados">🚨 Abordados</div>
-      <div class="tab-btn" data-tab="locais">🏚️ Locais</div>
-      <div class="tab-btn" data-tab="procurados">🚓 Procurados</div>
+      <div class="tab-btn active" data-tab="todos"><i data-lucide="folder-open"></i> Todos</div>
+      <div class="tab-btn" data-tab="abordados"><i data-lucide="siren"></i> Abordados</div>
+      <div class="tab-btn" data-tab="locais"><i data-lucide="home"></i> Locais</div>
+      <div class="tab-btn" data-tab="procurados"><i data-lucide="shield-alert"></i> Procurados</div>
     </div>
     <div class="arch-list" id="archList"></div>
   </div>
@@ -374,8 +380,8 @@
 <div class="overlay" id="personSheet">
   <div class="sheet">
     <div class="sheet-header">
-      <h2>👤 <span id="personTitulo">Ficha do Indivíduo</span></h2>
-      <div class="close-x" data-close="personSheet">✕</div>
+      <h2><i data-lucide="user"></i> <span id="personTitulo">Ficha do Indivíduo</span></h2>
+      <div class="close-x" data-close="personSheet"><i data-lucide="x"></i></div>
     </div>
     <div id="personData"></div>
     <div class="person-occ-title">Histórico de Abordagens (<span id="personOccCount">0</span>)</div>
@@ -389,6 +395,7 @@
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="app.js"></script>
 <script src="auth-sync.js"></script>
 </body>

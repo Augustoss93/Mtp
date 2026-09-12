@@ -23,6 +23,7 @@
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:40px;
 
   --radius:16px;
+  --addr-scale:1;
   --font-ui:'Rajdhani',sans-serif;
   --font-mono:'Share Tech Mono',monospace;
 }
@@ -67,14 +68,21 @@ html,body{
 /* ---------- TOP ADDRESS PANEL ---------- */
 #addressPanel{
   position:absolute; top:14px; left:14px; right:70px; z-index:500;
-  padding:10px 16px; display:flex; align-items:center; gap:10px;
-  transition:opacity .25s ease, transform .25s ease;
+  padding:calc(10px * var(--addr-scale, 1)) calc(16px * var(--addr-scale, 1)); display:flex; align-items:center; gap:calc(10px * var(--addr-scale, 1));
+  transition:opacity .25s ease, transform .25s ease, padding .2s ease;
 }
-#addressPanel .pin{ font-size:20px; filter:drop-shadow(0 0 6px var(--accent)); flex-shrink:0; }
+#addressPanel .pin{ font-size:calc(20px * var(--addr-scale, 1)); filter:drop-shadow(0 0 6px var(--accent)); flex-shrink:0; transition:font-size .2s ease; }
 #addressPanel .addr-text{ flex:1; min-width:0; }
-#addressPanel .addr-main{ font-family:var(--font-mono); font-size:14px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-#addressPanel .addr-sub{ font-size:11px; color:var(--text-dim); letter-spacing:.5px; text-transform:uppercase; margin-top:2px; }
-#addressPanel .gps-dot{ width:8px; height:8px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok); flex-shrink:0; animation:pulseDot 1.6s infinite; }
+#addressPanel .addr-main{
+  font-family:var(--font-mono); font-size:calc(14px * var(--addr-scale, 1)); color:var(--text);
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+  overflow-wrap:break-word; line-height:1.2; transition:font-size .2s ease;
+}
+#addressPanel .addr-sub{
+  font-size:calc(11px * var(--addr-scale, 1)); color:var(--text-dim); letter-spacing:.5px; text-transform:uppercase; margin-top:2px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:font-size .2s ease;
+}
+#addressPanel .gps-dot{ width:calc(8px * var(--addr-scale, 1)); height:calc(8px * var(--addr-scale, 1)); border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok); flex-shrink:0; animation:pulseDot 1.6s infinite; transition:width .2s ease, height .2s ease; }
 #addressPanel .gps-dot.searching{ background:var(--warn); box-shadow:0 0 8px var(--warn); }
 #addressPanel .gps-dot.imprecise{ background:var(--warn); box-shadow:0 0 8px var(--warn); animation:none; }
 @keyframes pulseDot{ 0%,100%{opacity:1;} 50%{opacity:.35;} }

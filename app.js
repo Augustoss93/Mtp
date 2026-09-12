@@ -268,6 +268,21 @@ alertRadiusSlider.addEventListener('input', (e)=>{
   localStorage.setItem(ALERT_RADIUS_KEY, PROCURADO_ALERT_RADIUS_M);
 });
 
+/* ---------------- Controle de tamanho do painel de localização ---------------- */
+const ADDR_SCALE_KEY = 'mdt_addr_scale_v1';
+const addrScaleSlider = document.getElementById('addrScaleSlider');
+const addrScaleVal = document.getElementById('addrScaleVal');
+const savedAddrScale = parseFloat(localStorage.getItem(ADDR_SCALE_KEY)) || 1;
+addrScaleSlider.value = savedAddrScale;
+addrScaleVal.textContent = Math.round(savedAddrScale * 100) + '%';
+document.documentElement.style.setProperty('--addr-scale', savedAddrScale);
+addrScaleSlider.addEventListener('input', (e)=>{
+  const scale = parseFloat(e.target.value);
+  document.documentElement.style.setProperty('--addr-scale', scale);
+  addrScaleVal.textContent = Math.round(scale * 100) + '%';
+  localStorage.setItem(ADDR_SCALE_KEY, scale);
+});
+
 /* ============================================================
    GEOLOCALIZAÇÃO EM TEMPO REAL
    ============================================================ */
